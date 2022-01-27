@@ -1,0 +1,50 @@
+# "local", "drive", "upload" or "download"
+mode: local
+# "bo", "en" and "pt" are currently supported
+lang: bo
+# the relative path to the folder containing the 7 folders of the data
+input: content/A0
+# Google Drive folder ids.
+# add the ids right after each "- ". keep the order from 1 to 5 from the drive folders
+# to find the id, open the folder, take everything following the last "/" in the url
+drive_folders:
+  ontos: 1LFSec-KM_szeutubKwF-KsyI1ZqzzcHZ
+  A0:
+  - 1nVnawUqL93mpdjl-n5swXe--z87XO04V
+  - 1mEwwKzPVlBfqOU_ot3wpgOZJgX9bsj5I
+  - 14tDWQ6CAA-_gXy5xOBDf2AWP52yHZFIL
+  - 1QADuSXVQSSYrwuUkhvJGR3MVSt0ZoWP5
+  - 1mf8jO3gg0dOjj1h6yWJqKEwSv72G3rq8
+  - 1gVAnexeSURDjGb30VN45_xu7kxP_Dffo
+# levels
+levels:
+- A0
+- A1
+- A2
+- A2+
+- B1
+- B1+
+- B2
+- B2+
+- C1
+- C1+
+level_colors:
+  A0: '00FFCC99'
+  A1: '00666699'
+  A2: '00003366'
+  A2+: '00339966'
+  B1: '00003300'
+# general onto that is used as the basis for creating new ones
+basis_onto: 'content/0 resources/master_onto.yaml'
+# POS tags
+pos:
+- ཁྱད་ཚིག
+- བསྣན་ཚིག
+- བྱ་ཚིག
+- བྱ་གྲོགས།
+- བྱ་མཐའ།
+- མིང་ཚིག
+- ཚབ་ཚིག
+- ཚིག་ཕྲད།
+- ཚེག་ཤད།
+- རྒྱན་ཚིག
