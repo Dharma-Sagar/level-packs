@@ -1,6 +1,9 @@
+from pathlib import Path
+
 from .corpus_segment import Tokenizer
 from .google_drive import upload_to_drive, download_drive
 from .onto.leavedonto.tag_to_onto import generate_to_tag
+from .convert2plaintxt import convert2plaintxt
 
 
 def create_pack(
@@ -59,36 +62,37 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, basis_onto=None, pos=N
             cur += 1
 
         # 1. convert raw .docx files to text only containing raw text
-        if cur == 1:
+        if cur == 2:
             print("\tconverting to simple text...")
+            in_file = steps[cur-1]
+            out_file = path_ids[cur-1][0] / (in_file.stem + '_textonly.docx')
+            convert2plaintxt(in_file, out_file)
+            new_files.append(out_file)
 
         # 2. mark all text to be extracted using a given style
             print('\t--> Please apply the style to all text to be extracted.')
 
         # 3. extract all marked text
-        if cur == 2:
-            print("\textracting all text and segmenting it")
-
-        # 4. check formatting before segmentation
-            print('\t--> Please check the formatting of the files before segmentation.')
-
-        # 5. segmenting
         if cur == 3:
+            print("\textracting all text and segmenting it")
+            in_file = ''
+            out_file = ''
+            extract_n_segment(in_file, out_file)
+            new_files.append(out_file)
+
             print("\tsegmenting...")
+            in_file = out_file
+            out_file = path_ids[cur - 1][0] / (in_file.stem + "_segmented.txt")
             if not tok:
                 tok = T.set_tok()
-
-            in_file = steps[cur - 1]
-            out_file = path_ids[cur - 1][0] / (in_file.stem + "_segmented.txt")
             T.tok_file(tok, in_file, out_file)
-            new_files.append(in_file)
             new_files.append(out_file)
 
         # 6. manually correct the segmentation
             print("\t--> Please manually correct the segmentation.")
 
         # 7. create the _totag.xlsx in to_tag from the segmented .txt file from segmented
-        elif cur == 4:
+        elif cur == 5:
             print("\ncreating the file to tag...")
             in_file = steps[cur - 1]
             out_file = path_ids[cur - 1][0] / (
@@ -104,14 +108,14 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, basis_onto=None, pos=N
             )
 
         # 9. create .yaml ontology files from tagged .xlsx files from to_tag
-        elif cur == 5:
+        elif cur == 6:
             print("\t creating the onto from the tagged file...")
             in_file = steps[cur - 1]
             out_file = path_ids[cur - 1][0] / (
                 in_file.stem.split("_")[0] + "_onto.yaml"
             )
             if not out_file.is_file():
-                onto_from_tagged(in_file, out_file, resources, basis_onto=basis_onto)
+                # onto_from_tagged(in_file, out_file, resources, basis_onto=basis_onto)
                 new_files.append(out_file)
 
             # 6. manually fill in the onto
@@ -120,8 +124,12 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, basis_onto=None, pos=N
             )
 
         # 10. merge into the level onto
-        elif cur == 6:
+        # TODO: add this step as 7 in state{}
+        elif cur == 7:
             print("\tmerging produced ontos into the level onto...")
+            in_file = ''
+            out_files = merge_ontos(in_file, out_file)
+            new_files.append(out_files)
 
         else:
             print("\tfile processed.")
