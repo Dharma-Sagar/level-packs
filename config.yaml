@@ -3,7 +3,7 @@ mode: local
 # "bo", "en" and "pt" are currently supported
 lang: bo
 # the relative path to the folder containing the 7 folders of the data
-input: content/A1
+input: content/A0
 # Google Drive folder ids.
 # add the ids right after each "- ". keep the order from 1 to 5 from the drive folders
 # to find the id, open the folder, take everything following the last "/" in the url
@@ -35,18 +35,26 @@ levels:
 - B2+
 - C1
 - C1+
+legend_template:
+- word
+- lemma
+- POS
+- sense
+- level
+- synonyms
+- origin
+- definition
 level_colors:
   A0: '00FFCC99'
   A1: '00666699'
   A2: '00003366'
   A2+: '00339966'
   B1: '00003300'
-# general onto that is used as the basis for creating new ones
-basis_onto: 'content/0 resources/master_onto.yaml'
 # POS tags
 pos:
 - ཁྱད་ཚིག
 - བསྣན་ཚིག
+- དྲི་ཚིག
 - བྱ་ཚིག
 - བྱ་གྲོགས།
 - བྱ་མཐའ།

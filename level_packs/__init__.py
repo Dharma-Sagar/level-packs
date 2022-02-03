@@ -5,7 +5,7 @@ from .create_pack import create_pack
 
 
 def create_packs():
-    mode, lang, content, driver_folders, level_colors, basis_onto, pos, levels = read_config()
+    mode, lang, content, driver_folders, level_colors, pos, levels, legend = read_config()
     content = Path(content)
     create_pack(
         content,
@@ -13,9 +13,9 @@ def create_packs():
         lang,
         mode=mode,
         l_colors=level_colors,
-        basis_onto=basis_onto,
         pos=pos,
         levels=levels,
+        legend=legend
     )
 
 
@@ -47,9 +47,9 @@ drive_folders:
         struct["input"],
         struct["drive_folders"],
         struct["level_colors"],
-        struct["basis_onto"],
         struct["pos"],
-        struct["levels"]
+        struct["levels"],
+        struct["legend_template"],
     )
 
 

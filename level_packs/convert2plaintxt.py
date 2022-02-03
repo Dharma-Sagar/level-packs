@@ -133,4 +133,8 @@ def separate_tables(string):
                 chunks.append(('table', table))
                 table = []
             non_table.append(line)
+    if non_table:
+        chunks.append(('non_table', non_table))
+    if table:
+        chunks.append(('table', table))
     return chunks

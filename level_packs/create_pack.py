@@ -2,8 +2,10 @@ from pathlib import Path
 
 from .corpus_segment import Tokenizer
 from .google_drive import upload_to_drive, download_drive
-from .onto.leavedonto.tag_to_onto import generate_to_tag
+from .generate_to_tag import generate_to_tag
 from .convert2plaintxt import convert2plaintxt
+from .extract_level_content import extract_content
+from .onto_from_tagged import onto_from_tagged
 
 
 def create_pack(
@@ -13,9 +15,9 @@ def create_pack(
     mode="local",
     subs=None,
     l_colors=None,
-    basis_onto=None,
     pos=None,
     levels=None,
+    legend=None
 ):
     if not subs:
         subs = [
@@ -37,9 +39,9 @@ def create_pack(
         return
 
     if mode == "local":
-        create_pack_local(path_ids, lang=lang, l_colors=l_colors, basis_onto=basis_onto, pos=pos, levels=levels)
+        create_pack_local(path_ids, lang=lang, l_colors=l_colors, pos=pos, levels=levels, legend=legend, ontos=path_ontos)
     elif mode == "drive":
-        create_pack_local(path_ids, lang=lang, l_colors=l_colors, basis_onto=basis_onto, pos=pos, levels=levels)
+        create_pack_local(path_ids, lang=lang, l_colors=l_colors, pos=pos, levels=levels, legend=legend, ontos=path_ontos)
         upload_to_drive(drive_ids)
     elif mode == "download":
         download_drive(path_ids)
@@ -49,7 +51,7 @@ def create_pack(
         raise ValueError('either one of "local", "drive", "download" and "upload".')
 
 
-def create_pack_local(path_ids, lang="bo", l_colors=None, basis_onto=None, pos=None, levels=None):
+def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None, legend=None, ontos=None):
     state, resources = current_state(path_ids)
     new_files = []
     T = Tokenizer(lang=lang)
@@ -73,16 +75,19 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, basis_onto=None, pos=N
             print('\t--> Please apply the style to all text to be extracted.')
 
         # 3. extract all marked text
+        out_file = None
         if cur == 3:
             print("\textracting all text and segmenting it")
-            in_file = ''
-            out_file = ''
-            extract_n_segment(in_file, out_file)
+            in_file = steps[cur-1]
+            out_file = path_ids[cur-1][0] / (in_file.stem.split('_')[0] + '_tosegment.txt')
+            extract_content(in_file, out_file)
             new_files.append(out_file)
+            cur += 1  # incrementing so that segmentation happens right after
 
+        if cur == 4:
             print("\tsegmenting...")
-            in_file = out_file
-            out_file = path_ids[cur - 1][0] / (in_file.stem + "_segmented.txt")
+            in_file = steps[cur-1] if steps[cur-1] else out_file
+            out_file = path_ids[cur - 1][0] / (in_file.stem.split('_')[0] + "_segmented.txt")
             if not tok:
                 tok = T.set_tok()
             T.tok_file(tok, in_file, out_file)
@@ -99,7 +104,9 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, basis_onto=None, pos=N
                 in_file.stem.split("_")[0] + "_totag.xlsx"
             )
             if not out_file.is_file():
-                generate_to_tag(in_file, out_file, resources, pos, levels, basis_onto=basis_onto)
+                finalized_ontos = ontos[0]
+                current_ontos = path_ids[5][0]
+                generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, l_colors)
                 new_files.append(out_file)
 
         # 8. manually POS tag the segmented text
@@ -115,7 +122,7 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, basis_onto=None, pos=N
                 in_file.stem.split("_")[0] + "_onto.yaml"
             )
             if not out_file.is_file():
-                # onto_from_tagged(in_file, out_file, resources, basis_onto=basis_onto)
+                onto_from_tagged(in_file, out_file, ontos[0], legend)
                 new_files.append(out_file)
 
             # 6. manually fill in the onto
@@ -128,7 +135,7 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, basis_onto=None, pos=N
         elif cur == 7:
             print("\tmerging produced ontos into the level onto...")
             in_file = ''
-            out_files = merge_ontos(in_file, out_file)
+            out_files = ''  # merge_ontos(in_file, out_file)
             new_files.append(out_files)
 
         else:
