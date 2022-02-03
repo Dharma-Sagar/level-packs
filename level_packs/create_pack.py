@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import yaml
+
 from .corpus_segment import Tokenizer
 from .google_drive import upload_to_drive, download_drive
 from .generate_to_tag import generate_to_tag
@@ -99,15 +101,15 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
         # 7. create the _totag.xlsx in to_tag from the segmented .txt file from segmented
         elif cur == 5:
             print("\ncreating the file to tag...")
+            # TODO: check if all the chunks of previous files are tagged. if yes, proceed to this file, else pass
             in_file = steps[cur - 1]
             out_file = path_ids[cur - 1][0] / (
                 in_file.stem.split("_")[0] + "_totag.xlsx"
             )
-            if not out_file.is_file():
-                finalized_ontos = ontos[0]
-                current_ontos = path_ids[5][0]
-                generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, l_colors)
-                new_files.append(out_file)
+            finalized_ontos = ontos[0]
+            current_ontos = path_ids[5][0]
+            generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, l_colors)
+            new_files.append(out_file)
 
         # 8. manually POS tag the segmented text
             print(
@@ -160,6 +162,13 @@ def current_state(paths_ids):
         for f in path.glob("*"):
             if f.suffix != file_type[path.stem]:
                 continue
+            # test chunks are all processed
+            if path.stem.startswith('5'):
+                chunks_conf = f.parent / (f.stem.split('_')[0] + '.config')
+                if chunks_conf.is_file():
+                    config = yaml.safe_load(chunks_conf.read_text())
+                    if 'todo' in config.values():
+                        continue
             # add file to state
             stem = f.stem.split("_")[0]
             if stem not in state:
