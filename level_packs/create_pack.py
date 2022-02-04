@@ -58,6 +58,7 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
     new_files = []
     T = Tokenizer(lang=lang)
     tok = None
+    has_totag_unfinished = False
 
     for file, steps in state.items():
         print(file)
@@ -99,25 +100,32 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
             print("\t--> Please manually correct the segmentation.")
 
         # 7. create the _totag.xlsx in to_tag from the segmented .txt file from segmented
-        elif cur == 5:
-            print("\ncreating the file to tag...")
-            # TODO: check if all the chunks of previous files are tagged. if yes, proceed to this file, else pass
-            in_file = steps[cur - 1]
-            out_file = path_ids[cur - 1][0] / (
-                in_file.stem.split("_")[0] + "_totag.xlsx"
-            )
-            finalized_ontos = ontos[0]
-            current_ontos = path_ids[5][0]
-            generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, l_colors)
-            new_files.append(out_file)
+        if cur == 5:
+            if not has_totag_unfinished:
+                print("\ncreating the file to tag...")
+                in_file = steps[cur - 1]
+                out_file = path_ids[cur - 1][0] / (
+                    in_file.stem.split("_")[0] + "_totag.xlsx"
+                )
+                tmp_onto = out_file.parent.parent / '6 vocabulary' / (out_file.stem.split('_')[0] + '_partial.yaml')
 
-        # 8. manually POS tag the segmented text
-            print(
-                "\t--> Please manually tag new words with their POS tag and level. (words not tagged will be ignored)"
-            )
+                # generate partial ontos from the tagged chunks
+                if out_file.is_file():
+                    onto_from_tagged(out_file, tmp_onto, ontos[0], legend)
+
+                # create totag
+                finalized_ontos = ontos[0]
+                current_ontos = path_ids[5][0]
+                has_totag_unfinished = generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, l_colors)
+
+                new_files.append(out_file)
+            # 8. manually POS tag the segmented text
+                print(
+                    "\t--> Please manually tag new words with their POS tag and level. (words not tagged will be ignored)"
+                )
 
         # 9. create .yaml ontology files from tagged .xlsx files from to_tag
-        elif cur == 6:
+        if cur == 6:
             print("\t creating the onto from the tagged file...")
             in_file = steps[cur - 1]
             out_file = path_ids[cur - 1][0] / (
@@ -127,6 +135,11 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
                 onto_from_tagged(in_file, out_file, ontos[0], legend)
                 new_files.append(out_file)
 
+            # removing temporary partial ontos
+            tmp_onto = out_file.parent / (out_file.stem.split('_')[0] + '_partial.yaml')
+            if tmp_onto.is_file():
+                tmp_onto.unlink()
+
             # 6. manually fill in the onto
             print(
                 '\t--> Please integrate new words in the onto from "to_organize" sections and add synonyms.'
@@ -134,14 +147,11 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
 
         # 10. merge into the level onto
         # TODO: add this step as 7 in state{}
-        elif cur == 7:
+        if cur == 7:
             print("\tmerging produced ontos into the level onto...")
             in_file = ''
             out_files = ''  # merge_ontos(in_file, out_file)
             new_files.append(out_files)
-
-        else:
-            print("\tfile processed.")
 
     write_to_upload(new_files)
 
@@ -169,6 +179,12 @@ def current_state(paths_ids):
                     config = yaml.safe_load(chunks_conf.read_text())
                     if 'todo' in config.values():
                         continue
+
+            # ignore the partial ontos
+            if path.stem.startswith('6'):
+                if f.stem.endswith('partial'):
+                    continue
+
             # add file to state
             stem = f.stem.split("_")[0]
             if stem not in state:
