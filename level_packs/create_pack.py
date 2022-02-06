@@ -8,6 +8,7 @@ from .generate_to_tag import generate_to_tag
 from .convert2plaintxt import convert2plaintxt
 from .extract_level_content import extract_content
 from .onto_from_tagged import onto_from_tagged
+from .merge_ontos import merge_ontos
 
 
 def create_pack(
@@ -28,11 +29,12 @@ def create_pack(
             "3 to-segment",
             "4 segmented",
             "5 to-tag",
-            "6 vocabulary",
         ]
 
-    path_ids = [(content_path / subs[i], drive_ids[content_path.stem][i]) for i in range(len(drive_ids[content_path.stem]))]
-    path_ontos = (content_path.parent / 'ontos', drive_ids['ontos'])
+    print()
+    path_ids = [(content_path / subs[i], drive_ids[content_path.stem][i]) for i in range(len(drive_ids[content_path.stem])-1)]
+    path_ontos = (content_path.parent / 'ontos' / content_path.stem, drive_ids['ontos'])
+    path_ids.append(path_ontos)
     abort = prepare_folders(content_path, subs)  # prepare the folder structure
     if abort and mode == "local":
         print(
@@ -145,32 +147,38 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
                 '\t--> Please integrate new words in the onto from "to_organize" sections and add synonyms.'
             )
 
-        # 10. merge into the level onto
-        # TODO: add this st ep as 7 in state{}
-        if cur == 7:
+    # 10. merge into the level onto
+    # check that all the raw docx files have corresponding ontos
+    if sorted([p.stem for p in path_ids[0][0].glob('*.docx')]) == sorted([p.stem.split('_')[0] for p in path_ids[5][0].glob('*_onto.yaml')]):
+        in_path = path_ids[5][0]
+        out_file = in_path.parent / (in_path.stem + '_onto.yaml')
+        if not out_file.is_file():
             print("\tmerging produced ontos into the level onto...")
-            in_file = ''
-            out_files = ''  # merge_ontos(in_file, out_file)
-            new_files.append(out_files)
+            merge_ontos(in_path, out_file)
+            new_files.append(out_file)
 
     write_to_upload(new_files)
 
 
 def current_state(paths_ids):
+    state = {}
+    stems = []  # for ontos_path
+
+    # workflow files
     file_type = {
         "1 docx-raw": ".docx",
         "2 docx-text-only": ".docx",
         "3 to-segment": ".txt",
         "4 segmented": ".txt",
         "5 to-tag": ".xlsx",
-        "6 vocabulary": ".yaml",
+        "ontos": ".yaml",
     }
-
-    state = {}
     resources = {}
     for path, _ in paths_ids:
         for f in path.glob("*"):
-            if f.suffix != file_type[path.stem]:
+            if path.parts[-2] != 'ontos' and f.suffix != file_type[path.stem]:  # 5 first steps
+                continue
+            elif path.parts[-2] == 'ontos' and f.suffix != file_type[path.parts[-2]]:  # 6th step
                 continue
             # test chunks are all processed
             if path.stem.startswith('5'):
@@ -181,15 +189,20 @@ def current_state(paths_ids):
                         continue
 
             # ignore the partial ontos
-            if path.stem.startswith('6'):
+            if path.parts[-2] == 'ontos':
                 if f.stem.endswith('partial'):
                     continue
 
             # add file to state
             stem = f.stem.split("_")[0]
+            if stem not in stems:
+                stems.append(stem)
             if stem not in state:
                 state[stem] = {i: None for i in range(1, len(paths_ids) + 1)}
-            step = int(f.parts[-2][0])
+            if path.parts[-2] != 'ontos':
+                step = int(f.parts[-2][0])
+            else:
+                step = 6
             state[stem][step] = f
 
             # add onto files to resources
@@ -213,12 +226,28 @@ def write_to_upload(files):
 
 def prepare_folders(content_path, sub_folders):
     missing = False
+    # root
     if not content_path.is_dir():
         missing = True
         print(f'folder "{content_path}" does not exist. Creating it...')
         content_path.mkdir()
+
+    # workflow subfolders
     for sub in sub_folders:
         if not (content_path / sub).is_dir():
             print(f'folder "{(content_path / sub)}" does not exist. Creating it...')
             (content_path / sub).mkdir()
+
+    # ontos folder
+    onto_path = content_path.parent / 'ontos'
+    if not onto_path.is_dir():
+        missing = True
+        print(f'folder "{onto_path}" does not exist. Creating it...')
+        onto_path.mkdir()
+
+    level_onto_path = onto_path / content_path.stem
+    if not level_onto_path.is_dir():
+        missing = True
+        print(f'folder "{level_onto_path}" does not exist. Creating it...')
+        level_onto_path.mkdir()
     return missing
