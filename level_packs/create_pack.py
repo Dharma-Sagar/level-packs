@@ -146,7 +146,7 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
             )
 
         # 10. merge into the level onto
-        # TODO: add this step as 7 in state{}
+        # TODO: add this st ep as 7 in state{}
         if cur == 7:
             print("\tmerging produced ontos into the level onto...")
             in_file = ''
