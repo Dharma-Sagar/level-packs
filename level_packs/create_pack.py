@@ -61,6 +61,7 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
     T = Tokenizer(lang=lang)
     tok = None
     has_totag_unfinished = False
+    has_ontos_unfinished = False
 
     for file, steps in state.items():
         print(file)
@@ -109,15 +110,15 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
                 out_file = path_ids[cur - 1][0] / (
                     in_file.stem.split("_")[0] + "_totag.xlsx"
                 )
-                tmp_onto = out_file.parent.parent / '6 vocabulary' / (out_file.stem.split('_')[0] + '_partial.yaml')
+                tmp_onto = ontos[0] / (out_file.stem.split('_')[0] + '_partial.yaml')
 
+                finalized_ontos = ontos[0].parent
+                current_ontos = path_ids[5][0]
                 # generate partial ontos from the tagged chunks
                 if out_file.is_file():
-                    onto_from_tagged(out_file, tmp_onto, ontos[0], legend)
+                    onto_from_tagged(out_file, tmp_onto, finalized_ontos, current_ontos, ontos[0], legend)
 
                 # create totag
-                finalized_ontos = ontos[0]
-                current_ontos = path_ids[5][0]
                 has_totag_unfinished = generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, l_colors)
 
                 new_files.append(out_file)
@@ -128,13 +129,18 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
 
         # 9. create .yaml ontology files from tagged .xlsx files from to_tag
         if cur == 6:
+            if has_ontos_unfinished:
+               continue
+
             print("\t creating the onto from the tagged file...")
             in_file = steps[cur - 1]
             out_file = path_ids[cur - 1][0] / (
                 in_file.stem.split("_")[0] + "_onto.yaml"
             )
             if not out_file.is_file():
-                onto_from_tagged(in_file, out_file, ontos[0], legend)
+                finalized_ontos = ontos[0].parent
+                current_ontos = path_ids[5][0]
+                onto_from_tagged(in_file, out_file, finalized_ontos, current_ontos, ontos[0].parent, legend)
                 new_files.append(out_file)
 
             # removing temporary partial ontos
@@ -146,6 +152,7 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
             print(
                 '\t--> Please integrate new words in the onto from "to_organize" sections and add synonyms.'
             )
+            has_ontos_unfinished = True
 
     # 10. merge into the level onto
     # check that all the raw docx files have corresponding ontos

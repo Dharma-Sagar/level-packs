@@ -3,7 +3,7 @@ mode: local
 # "bo", "en" and "pt" are currently supported
 lang: bo
 # the relative path to the folder containing the 7 folders of the data
-input: content/A0
+input: content/A1
 # Google Drive folder ids.
 # add the ids right after each "- ". keep the order from 1 to 5 from the drive folders
 # to find the id, open the folder, take everything following the last "/" in the url
