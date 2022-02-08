@@ -31,7 +31,6 @@ def create_pack(
             "5 to-tag",
         ]
 
-    print()
     path_ids = [(content_path / subs[i], drive_ids[content_path.stem][i]) for i in range(len(drive_ids[content_path.stem])-1)]
     path_ontos = (content_path.parent / 'ontos' / content_path.stem, drive_ids['ontos'])
     path_ids.append(path_ontos)
@@ -163,6 +162,13 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
             print("\tmerging produced ontos into the level onto...")
             merge_ontos(in_path, out_file)
             new_files.append(out_file)
+
+    # 11. merge all level ontos into a single master onto
+    level_ontos = sorted([o for o in ontos[0].parent.glob('*.yaml') if not o.stem.startswith('master')])
+    master = ontos[0].parent / 'master_onto.yaml'
+    if not master.is_file():
+        print('\tcreating master onto...')
+        merge_ontos(level_ontos, master)
 
     write_to_upload(new_files)
 
