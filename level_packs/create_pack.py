@@ -16,6 +16,7 @@ def create_pack(
     drive_ids,
     lang,
     mode="local",
+    line_mode="chunk",
     subs=None,
     l_colors=None,
     pos=None,
@@ -42,9 +43,9 @@ def create_pack(
         return
 
     if mode == "local":
-        create_pack_local(path_ids, lang=lang, l_colors=l_colors, pos=pos, levels=levels, legend=legend, ontos=path_ontos)
+        create_pack_local(path_ids, lang=lang, line_mode=line_mode, l_colors=l_colors, pos=pos, levels=levels, legend=legend, ontos=path_ontos)
     elif mode == "drive":
-        create_pack_local(path_ids, lang=lang, l_colors=l_colors, pos=pos, levels=levels, legend=legend, ontos=path_ontos)
+        create_pack_local(path_ids, lang=lang, line_mode=line_mode, l_colors=l_colors, pos=pos, levels=levels, legend=legend, ontos=path_ontos)
         upload_to_drive(drive_ids)
     elif mode == "download":
         download_drive(path_ids)
@@ -54,7 +55,7 @@ def create_pack(
         raise ValueError('either one of "local", "drive", "download" and "upload".')
 
 
-def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None, legend=None, ontos=None):
+def create_pack_local(path_ids, lang="bo", line_mode="chunk", l_colors=None, pos=None, levels=None, legend=None, ontos=None):
     state, resources = current_state(path_ids)
     new_files = []
     T = Tokenizer(lang=lang)
@@ -118,7 +119,7 @@ def create_pack_local(path_ids, lang="bo", l_colors=None, pos=None, levels=None,
                     onto_from_tagged(out_file, tmp_onto, finalized_ontos, current_ontos, ontos[0], legend)
 
                 # create totag
-                has_totag_unfinished = generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, l_colors)
+                has_totag_unfinished = generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, line_mode, l_colors)
 
                 new_files.append(out_file)
             # 8. manually POS tag the segmented text

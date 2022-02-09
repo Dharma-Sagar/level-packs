@@ -5,7 +5,7 @@ from .create_pack import create_pack
 
 
 def create_packs():
-    mode, lang, content, driver_folders, level_colors, pos, levels, legend = read_config()
+    mode, lang, content, driver_folders, level_colors, pos, levels, legend, line_mode = read_config()
     content = Path(content)
     create_pack(
         content,
@@ -15,7 +15,8 @@ def create_packs():
         l_colors=level_colors,
         pos=pos,
         levels=levels,
-        legend=legend
+        legend=legend,
+        line_mode=line_mode
     )
 
 
@@ -26,6 +27,8 @@ mode: local
 lang: bo
 # the relative path to the folder containing the 5 folders of the data
 input: content
+# lines are either sentences ("sentence") or chunks of syllables ("chunk")
+line_mode: sentence
 # Google Drive folder ids.
 # add the ids right after each "- ". keep the order from 1 to 5 from the drive folders
 # to find the id, open the folder, take everything following the last "/" in the url
@@ -50,6 +53,7 @@ drive_folders:
         struct["pos"],
         struct["levels"],
         struct["legend_template"],
+        struct["line_mode"],
     )
 
 
