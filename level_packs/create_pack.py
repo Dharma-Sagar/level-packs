@@ -118,8 +118,15 @@ def create_pack_local(path_ids, lang="bo", line_mode="chunk", l_colors=None, pos
                 if out_file.is_file():
                     onto_from_tagged(out_file, tmp_onto, finalized_ontos, current_ontos, ontos[0], legend)
 
+                # switch line_mode to chunk if filename ends with "vocab"
+                contextual_line_mode = ''
+                if file.endswith('vocab'):
+                    contextual_line_mode += 'chunk'
+                else:
+                    contextual_line_mode += line_mode
+
                 # create totag
-                has_totag_unfinished = generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, line_mode, l_colors)
+                has_totag_unfinished = generate_to_tag(in_file, out_file, finalized_ontos, current_ontos, pos, levels, contextual_line_mode, l_colors)
 
                 new_files.append(out_file)
             # 8. manually POS tag the segmented text
@@ -189,7 +196,8 @@ def current_state(paths_ids):
     }
     resources = {}
     for path, _ in paths_ids:
-        for f in path.glob("*"):
+        sorted_files = sorted(list(path.glob("*")))
+        for f in sorted_files:
             if path.parts[-2] != 'ontos' and f.suffix != file_type[path.stem]:  # 5 first steps
                 continue
             elif path.parts[-2] == 'ontos' and f.suffix != file_type[path.parts[-2]]:  # 6th step
