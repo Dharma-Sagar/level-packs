@@ -3,7 +3,7 @@ mode: local
 # "bo", "en" and "pt" are currently supported
 lang: bo
 # the relative path to the folder containing the 7 folders of the data
-input: content/to-simplify
+input: content/A0
 # lines are either sentences ("sent") or chunks of syllables ("chunk")
 line_mode: sentence
 # Google Drive folder ids.

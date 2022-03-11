@@ -2,6 +2,7 @@ import yaml
 from pathlib import Path
 
 from .create_pack import create_pack
+from .vocab_report import gen_vocab_report
 
 
 def create_packs():
