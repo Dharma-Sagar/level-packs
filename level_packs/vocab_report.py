@@ -81,9 +81,9 @@ def export_lessons_vocab_report(level, total_data, out_file):
                 for ssubtitle, ssubdata in subdata.items():
                     doc.add_heading(ssubtitle, 3)
                     par = doc.add_paragraph()
-                    for num, entry in enumerate(ssubdata):
-                        run = par.add_run(f'{num+1}. ')
-                        run.font.size = Pt(9)
+                    run = par.add_run(f'{len(ssubdata)}. ')
+                    run.font.size = Pt(9)
+                    for entry in ssubdata:
                         par.add_run(' '.join(entry), style=entry_style)
                         par.add_run(' ')
             elif subtitle == shared:
@@ -94,9 +94,9 @@ def export_lessons_vocab_report(level, total_data, out_file):
                         run = par.add_run(sssubtitle, style=entry_style)
                         run.bold = True
                         par.add_run()
-                        for num, entry in enumerate(sssubdata):
-                            run = par.add_run(f'{num+1}. ')
-                            run.font.size = Pt(9)
+                        run = par.add_run(f'{len(sssubdata)}. ')
+                        run.font.size = Pt(9)
+                        for entry in sssubdata:
                             par.add_run(' '.join(entry), style=entry_style)
                             par.add_run(' ')
                         par.add_run().add_break()
@@ -145,9 +145,9 @@ def export_total_vocab_report(level, total_data, out_file):
             for subtitle, subdata in data.items():
                 doc.add_heading(subtitle, 2)
                 par = doc.add_paragraph()
-                for num, entry in enumerate(subdata):
-                    run = par.add_run(f'{num+1}. ')
-                    run.font.size = Pt(9)
+                run = par.add_run(f'{len(subdata)}. ')
+                run.font.size = Pt(9)
+                for entry in subdata:
                     par.add_run(' '.join(entry), style=entry_style)
                     par.add_run(' ')
 
