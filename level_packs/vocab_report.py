@@ -93,12 +93,14 @@ def export_lessons_vocab_report(level, total_data, out_file):
                     for sssubtitle, sssubdata in ssubdata.items():
                         run = par.add_run(sssubtitle, style=entry_style)
                         run.bold = True
-                        par.add_run().add_break()
+                        par.add_run()
                         for num, entry in enumerate(sssubdata):
                             run = par.add_run(f'{num+1}. ')
                             run.font.size = Pt(9)
                             par.add_run(' '.join(entry), style=entry_style)
                             par.add_run(' ')
+                        par.add_run().add_break()
+                    par.runs[-1].text = ''
             else:
                 raise ValueError('this is unexpected!')
 
