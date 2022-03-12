@@ -81,7 +81,7 @@ def export_lessons_vocab_report(level, total_data, out_file):
                 for ssubtitle, ssubdata in subdata.items():
                     doc.add_heading(ssubtitle, 3)
                     par = doc.add_paragraph()
-                    run = par.add_run(f'{len(ssubdata)}. ')
+                    run = par.add_run(f'{len(ssubdata)} — ')
                     run.font.size = Pt(9)
                     for entry in ssubdata:
                         par.add_run(' '.join(entry), style=entry_style)
@@ -91,10 +91,10 @@ def export_lessons_vocab_report(level, total_data, out_file):
                     doc.add_heading(ssubtitle, 3)
                     par = doc.add_paragraph()
                     for sssubtitle, sssubdata in ssubdata.items():
-                        run = par.add_run(sssubtitle, style=entry_style)
+                        run = par.add_run(sssubtitle + ': ', style=entry_style)
                         run.bold = True
                         par.add_run()
-                        run = par.add_run(f'{len(sssubdata)}. ')
+                        run = par.add_run(f'{len(sssubdata)} — ')
                         run.font.size = Pt(9)
                         for entry in sssubdata:
                             par.add_run(' '.join(entry), style=entry_style)
@@ -145,7 +145,7 @@ def export_total_vocab_report(level, total_data, out_file):
             for subtitle, subdata in data.items():
                 doc.add_heading(subtitle, 2)
                 par = doc.add_paragraph()
-                run = par.add_run(f'{len(subdata)}. ')
+                run = par.add_run(f'{len(subdata)} — ')
                 run.font.size = Pt(9)
                 for entry in subdata:
                     par.add_run(' '.join(entry), style=entry_style)
