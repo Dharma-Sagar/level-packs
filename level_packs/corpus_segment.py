@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from botok import WordTokenizer, Config
-from spacy.lang.en import English
-from spacy.lang.pt import Portuguese
+#from spacy.lang.en import English
+#from spacy.lang.pt import Portuguese
 
 
 class Tokenizer:
@@ -15,12 +15,12 @@ class Tokenizer:
         if lang == "bo":
             self.set_tok = set_tok_bo
             self.tokenize = tokenize_bo
-        if lang == "en":
-            self.set_tok = set_tok_en
-            self.tokenize = tokenize_en
-        if lang == "pt":
-            self.set_tok = set_tok_pt
-            self.tokenize = tokenize_en
+        #if lang == "en":
+            #self.set_tok = set_tok_en
+            #self.tokenize = tokenize_en
+        #if lang == "pt":
+           # self.set_tok = set_tok_pt
+            #self.tokenize = tokenize_en
 
     def tok_file(self, tok, in_file, out_file):
         dump = in_file.read_text()
@@ -28,24 +28,24 @@ class Tokenizer:
         out_file.write_text(out)
 
 
-def set_tok_en():
-    nlp = English()
-    nlp.add_pipe("sentencizer")
-    return nlp
+#def set_tok_en():
+    #nlp = English()
+    #nlp.add_pipe("sentencizer")
+    #return nlp
 
 
-def set_tok_pt():
-    nlp = Portuguese()
-    nlp.add_pipe("sentencizer")
-    return nlp
+#def set_tok_pt():
+    #nlp = Portuguese()
+    #nlp.add_pipe("sentencizer")
+    #return nlp
 
 
-def tokenize_en(tok, string):
-    sents = []
-    for sent in tok(string).sents:
-        tokens = [str(s).replace(" ", "_") for s in sent]
-        sents.append(" ".join(tokens))
-    return "\n".join(sents)
+#def tokenize_en(tok, string):
+    #sents = []
+    #for sent in tok(string).sents:
+        #tokens = [str(s).replace(" ", "_") for s in sent]
+        #sents.append(" ".join(tokens))
+    #return "\n".join(sents)
 
 
 def set_tok_bo():
