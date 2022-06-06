@@ -14,7 +14,7 @@ def convert2plaintxt(in_file, out_file):
         print('pandoc is not installed. Installing pypandoc...')
         pypandoc.download_pandoc()
 
-    dump = pypandoc.convert(str(in_file), 'plain', format='docx')
+    dump = pypandoc.convert_file(str(in_file), 'plain', format='docx')
     txt = parse_md(dump)
     # create new document
     style_content = {
