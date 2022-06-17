@@ -90,6 +90,7 @@ def create_pack_local(path_ids, lang="bo", line_mode="chunk", l_colors=None, pos
             new_files.append(out_file)
             cur += 1  # incrementing so that segmentation happens right after
 
+        # 5. segment the selected input
         if cur == 4:
             print("\tsegmenting...")
             in_file = steps[cur-1] if steps[cur-1] else out_file

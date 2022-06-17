@@ -11,7 +11,7 @@ def convert2plaintxt(in_file, out_file):
     try:
         pypandoc.get_pandoc_path()
     except OSError:
-        print('pandoc is not installed. Installing pypandoc...')
+        print('pandoc is not installed. Installing pandoc...')
         pypandoc.download_pandoc()
 
     dump = pypandoc.convert_file(str(in_file), 'plain', format='docx')

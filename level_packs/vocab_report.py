@@ -1,12 +1,12 @@
 from collections import defaultdict
-import pickle
 from pathlib import Path
 
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
 from docx.enum.style import WD_STYLE_TYPE
 
 from .onto.leavedonto import OntoManager, LeavedOnto
+from .utils import parse_vocab, parse_tagged_sentences
 
 new = 'New Words'
 legend = 'Legend'
@@ -28,17 +28,31 @@ def get_selected_fields(om, entry):
     return filtered
 
 
-def gen_vocab_report(onto_path, out_path):
-    total_data = gather_total_data(onto_path)
-    lessons_data = gather_lesson_data(onto_path)
+def gen_vocab_report(onto_path, out_path, vocab_path, tagged_path):
+    # total_data = gather_total_data(onto_path)
+    # lessons_data = gather_lesson_data(onto_path)
+
+    import pickle
+    tmp = Path('tmp.pickle')
+    if not tmp.is_file():
+        words_data = gather_word_data(onto_path, vocab_path, tagged_path)
+        pickle.dump(words_data, open(str(tmp), 'wb'))
+    else:
+        words_data = pickle.load(open(str(tmp), 'rb'))
+
+
+
     level = onto_path.stem
 
-    # format it in docx
-    total_file = out_path / f'{level} Vocab Report - Total.docx'
-    export_total_vocab_report(level, total_data, total_file)
+    # # format it in docx
+    # total_file = out_path / f'{level} Vocab Report - Total.docx'
+    # export_total_vocab_report(level, total_data, total_file)
+    #
+    # lessons_file = out_path / f'{level} Vocab Report - Lessons.docx'
+    # export_lessons_vocab_report(level, lessons_data, lessons_file)
 
-    lessons_file = out_path / f'{level} Vocab Report - Lessons.docx'
-    export_lessons_vocab_report(level, lessons_data, lessons_file)
+    words_file = out_path / f'{level} Words Report.docx'
+    export_words_report(words_data, words_file)
 
 
 def export_lessons_vocab_report(level, total_data, out_file):
@@ -154,6 +168,96 @@ def export_total_vocab_report(level, total_data, out_file):
     doc.save(out_file)
 
 
+def export_words_report(words_data, words_file):
+    doc = Document()
+    styles = doc.styles
+
+    freq_style = styles.add_style('freq', WD_STYLE_TYPE.CHARACTER)
+    freq_font = freq_style.font
+    freq_font.name = 'Lato'
+    freq_font.italic = True
+    freq_font.size = Pt(7)
+
+    entry_style = styles.add_style('entry', WD_STYLE_TYPE.CHARACTER)
+    entry_font = entry_style.font
+    entry_font.size = Pt(7)
+    entry_font.name = 'Lato Light'
+
+    tree_style = styles.add_style('tree', WD_STYLE_TYPE.CHARACTER)
+    tree_font = tree_style.font
+    tree_font.name = 'Lato Light'
+    tree_font.size = Pt(5)
+
+    for level, lessons in words_data.items():
+        # TITLE
+        doc.add_heading(f'Level {level}', 1)
+
+        for lesson, words in lessons.items():
+            doc.add_heading(f'Lesson {lesson}', 3)
+
+            for word, occurences in words.items():
+                word_heading = doc.add_heading(f'"{word}"', 5)
+                sanity_freq = 0
+
+                onto_par = doc.add_paragraph()
+                onto_path = ''
+
+                if 'sanity' in occurences:
+                    sanity = occurences['sanity']
+                    heading = doc.add_heading('Previous lessons', 7)
+                    run = heading.runs[-1]
+                    run.font.color.rgb = RGBColor(255, 0, 0)
+                    for f in sanity:
+                        sanity_freq += f['freq']
+                        par = doc.add_paragraph()
+                        run = par.add_run(f'{f["origin"]}.docx, freq: {f["freq"]}, path: {"/".join(f["path"])}', style=freq_style)
+                        run.font.color.rgb = RGBColor(255, 0, 0)
+                        if 'sentences' in f:
+                            for sent in f['sentences']:
+                                par.add_run('\n')
+                                run = par.add_run(' '.join([s[0] for s in sent]), style=entry_style)
+                                run.font.color.rgb = RGBColor(255, 0, 0)
+
+                if not 'occurences' in occurences:
+                    continue
+
+                occurences = occurences['occurences']
+                total_freq = occurences['freq'] + sanity_freq
+                word_heading.add_run(f': {total_freq}')
+
+                lessons_with_word = [o for o in occurences.keys() if o  != 'freq']
+                for l_ww in lessons_with_word:
+                    lesson_freq = occurences[l_ww]['freq']
+                    doc.add_heading(f'{l_ww}: {lesson_freq}', 7)
+
+                    par = doc.add_paragraph()
+
+                    for f_ww in occurences[l_ww]['files']:
+
+                        file_freq = f_ww['freq']
+                        par.add_run(f'{file_freq} in ', style=freq_style)
+
+                        f = f_ww['origin']
+                        par.add_run(f'"{f}.docx"', style=freq_style)
+
+                        path = '/'.join(f_ww['path'])
+                        if not onto_path:
+                            onto_path = path
+                            onto_par.add_run(f'onto: {path}', style=freq_style)
+                        elif path != onto_path:
+                            par.add_run(f', onto: {path}', style=freq_style)
+
+                        if 'sentences' in f_ww:
+                            par.add_run('\n\t')
+                            for sent in f_ww['sentences']:
+                                par.add_run('{'+ ' '.join([s[0] for s in sent]) + '}, ', style=entry_style)
+                            par.runs[-1].text = par.runs[-1].text.rstrip().rstrip(',')
+                        par.add_run('\n')
+                    par.runs[-1].text = par.runs[-1].text.rstrip()
+
+    doc.save(words_file)
+
+
 def gather_total_data(onto_path):
     om = OntoManager()
     for f in sorted(list(onto_path.glob('*.yaml'))):
@@ -257,3 +361,107 @@ def gather_lesson_data(onto_path):
 
     return report_data
 
+
+def gather_word_data(onto_path, vocab_path, tagged_path):
+    word_data = process_n_filter_ontos(onto_path, vocab_path)
+    retrieve_sentences(word_data, tagged_path)
+    return word_data
+
+
+def retrieve_sentences(word_data, tagged_path):
+    sentences = parse_tagged_sentences(tagged_path)
+    for level, lessons in word_data.items():
+        for lesson, words in lessons.items():
+            for word, occurences in words.items():
+                if 'occurences' in occurences:
+                    occurences = occurences['occurences']
+                    for k, v in occurences.items():
+                        if k != 'freq':
+                            files = v['files']
+                            for f in files:
+                                origin = f['origin']
+                                if 'sentences' in origin:
+                                    pair = (word, f['POS'])
+                                    for sent in sentences[origin]:
+                                        if pair in sent:
+                                            if 'sentences' not in f:
+                                                f['sentences'] = []
+
+                                            if sent not in f['sentences']:
+                                                f['sentences'].append(sent)
+
+
+def process_n_filter_ontos(onto_path, vocab_path):
+    vocab = parse_vocab(vocab_path)
+
+    om = OntoManager()
+    for f in sorted(list(onto_path.glob('*.yaml'))):
+        om.merge_to_onto(f)
+
+    word_data = {}
+
+    for level, lessons in vocab.items():
+        if level not in word_data:
+            word_data[level] = {}
+
+        for lesson, a in lessons.items():
+            if lesson not in word_data[level]:
+                word_data[level][lesson] = {}
+
+            field_type = a['legend'][2]
+            words = a['words']
+            for word, pos, field in words:
+                if word not in word_data[level][lesson]:
+                    word_data[level][lesson][word] = {}
+
+                # 1. find word in onto
+                results = om.onto1.find_word(word)
+
+                # 2. filter results
+                # 2.a. filter on pos
+                if pos:
+                    results = [(r, entry) for r, entry in results if r[0] == pos]
+                # 2.b. filter on path-within-onto/categorisation
+                if field_type == 'CAT':
+                    if field:
+                        results = [(path, entry) for path, entry in results if '/'.join(path) == field]
+                # 2.c. filter on onto field
+                elif field and field_type in om.onto1.ont.legend:
+                    tmp = []
+                    for path, entries in results:
+                        tmp_res = []
+                        for entry in entries:
+                            if om.onto1.get_field_value(entry, field_type) == field:
+                                tmp_res.append(entry)
+                        if tmp_res:
+                            tmp.append((path, tmp_res))
+                    if tmp:
+                        results = tmp
+                else:
+                    print(f"{field_type} is not a field in the ontology and can't be used to filter the results.")
+
+                # 3. establish usage map of word
+                # 3.1 sanity check: word has not been used in previous lessons
+                for path, entries in results:
+                    for entry in entries:
+                        origins = om.onto1.get_field_value(entry, 'origin').split(' — ')
+                        for o in origins:
+                            filename, freq = o.split(':')
+                            freq = int(freq)
+                            o_lesson = filename.split('-')[0]
+                            if o_lesson < lesson:
+                                if 'sanity' not in word_data[level][lesson][word]:
+                                    word_data[level][lesson][word]['sanity'] = []
+
+                                word_data[level][lesson][word]['sanity'].append({'POS': pos, 'path': path, 'origin': filename, 'freq': freq})
+                            else:
+                                if 'occurences' not in word_data[level][lesson][word]:
+                                    word_data[level][lesson][word]['occurences'] = {'freq': 0}
+
+                                if o_lesson not in word_data[level][lesson][word]['occurences']:
+                                    word_data[level][lesson][word]['occurences'][o_lesson] = {'freq': 0, 'files': []}
+
+                                word_data[level][lesson][word]['occurences'][o_lesson]['files'].append({'POS': pos, 'path': path, 'origin': filename, 'freq': freq})
+                                word_data[level][lesson][word]['occurences']['freq'] += freq
+                                word_data[level][lesson][word]['occurences'][o_lesson]['freq'] += freq
+    return word_data
